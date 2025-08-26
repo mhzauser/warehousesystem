@@ -1,0 +1,21 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+
+{% block object-tools-items %}
+    <li>
+        <a href="{% url 'admin:inventory_stockout_upload_excel' %}" class="addlink" style="background: #dc3545;">
+            📤 آپلود Excel
+        </a>
+    </li>
+    <li>
+        <a href="{% url 'admin:inventory_stockout_download_template' %}" class="addlink" style="background: #17a2b8;">
+            📋 دانلود قالب
+        </a>
+    </li>
+    <li>
+        <a href="/inventory/download-unified-template/" class="addlink" style="background: #6f42c1;">
+            🔄 قالب یکپارچه
+        </a>
+    </li>
+    {{ block.super }}
+{% endblock %}

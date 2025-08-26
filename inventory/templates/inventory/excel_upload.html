@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>آپلود فایل Excel - سیستم انبار</title>
+    <style>
+        body {
+            font-family: 'Tahoma', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+        .content {
+            padding: 40px;
+        }
+        .section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 5px solid #007bff;
+        }
+        .section h2 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+        .section.unified {
+            border-left-color: #6f42c1;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        .section.transfer {
+            border-left-color: #fd7e14;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        }
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #0056b3;
+            background: #e3f2fd;
+        }
+        .upload-area.dragover {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            color: #212529;
+        }
+        .btn-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+        }
+        .btn-purple {
+            background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+            color: white;
+        }
+        .btn-orange {
+            background: linear-gradient(135deg, #fd7e14 0%, #e55a00 100%);
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .file-input {
+            display: none;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #6c757d;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .back-btn:hover {
+            background: #5a6268;
+            color: white;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 آپلود فایل Excel</h1>
+            <p>انتخاب کنید و فایل Excel خود را آپلود کنید</p>
+        </div>
+        
+        <div class="content">
+            <a href="{% url 'inventory:dashboard' %}" class="back-btn">← بازگشت به داشبورد</a>
+            
+            <!-- قالب یکپارچه ورودی و خروجی -->
+            <div class="section unified">
+                <h2>🔄 قالب یکپارچه ورودی و خروجی</h2>
+                <p>یک فایل Excel برای هر دو عملیات ورودی و خروجی انبار</p>
+                
+                <a href="{% url 'inventory:download_unified_template' %}" class="btn btn-purple">
+                    📋 دانلود قالب یکپارچه
+                </a>
+                
+                <div class="upload-area" id="unified-upload-area">
+                    <p>فایل Excel یکپارچه را اینجا رها کنید یا کلیک کنید</p>
+                    <input type="file" id="unified-file" class="file-input" accept=".xlsx">
+                    <button class="btn btn-primary" onclick="document.getElementById('unified-file').click()">
+                        انتخاب فایل
+                    </button>
+                </div>
+                
+                <div class="loading" id="unified-loading">
+                    <div class="spinner"></div>
+                    <p>در حال پردازش فایل یکپارچه...</p>
+                </div>
+                
+                <form id="unified-form" action="{% url 'inventory:upload_unified_excel' %}" method="post" enctype="multipart/form-data" style="display: none;">
+                    {% csrf_token %}
+                    <input type="file" name="excel_file" id="unified-file-input">
+                </form>
+            </div>
+            
+            <!-- انتقال انبار -->
+            <div class="section transfer">
+                <h2>🔄 انتقال انبار</h2>
+                <p>انتقال کالا بین انبارهای مختلف</p>
+                
+                <a href="{% url 'inventory:download_stock_transfer_template' %}" class="btn btn-orange">
+                    📋 دانلود قالب انتقال
+                </a>
+                
+                <div class="upload-area" id="transfer-upload-area">
+                    <p>فایل Excel انتقال انبار را اینجا رها کنید یا کلیک کنید</p>
+                    <input type="file" id="transfer-file" class="file-input" accept=".xlsx">
+                    <button class="btn btn-primary" onclick="document.getElementById('transfer-file').click()">
+                        انتخاب فایل
+                    </button>
+                </div>
+                
+                <div class="loading" id="transfer-loading">
+                    <div class="spinner"></div>
+                    <p>در حال پردازش فایل انتقال...</p>
+                </div>
+                
+                <form id="transfer-form" action="{% url 'inventory:upload_stock_transfer_excel' %}" method="post" enctype="multipart/form-data" style="display: none;">
+                    {% csrf_token %}
+                    <input type="file" name="excel_file" id="transfer-file-input">
+                </form>
+            </div>
+            
+            <!-- ورودی انبار -->
+            <div class="section">
+                <h2>📥 ورودی انبار</h2>
+                <p>ثبت ورودی کالا به انبار</p>
+                
+                <a href="{% url 'inventory:download_stock_in_template' %}" class="btn btn-success">
+                    📋 دانلود قالب ورودی
+                </a>
+                
+                <div class="upload-area" id="stockin-upload-area">
+                    <p>فایل Excel ورودی انبار را اینجا رها کنید یا کلیک کنید</p>
+                    <input type="file" id="stockin-file" class="file-input" accept=".xlsx">
+                    <button class="btn btn-primary" onclick="document.getElementById('stockin-file').click()">
+                        انتخاب فایل
+                    </button>
+                </div>
+                
+                <div class="loading" id="stockin-loading">
+                    <div class="spinner"></div>
+                    <p>در حال پردازش فایل ورودی...</p>
+                </div>
+                
+                <form id="stockin-form" action="{% url 'inventory:upload_stock_in_excel' %}" method="post" enctype="multipart/form-data" style="display: none;">
+                    {% csrf_token %}
+                    <input type="file" name="excel_file" id="stockin-file-input">
+                </form>
+            </div>
+            
+            <!-- خروجی انبار -->
+            <div class="section">
+                <h2>📤 خروجی انبار</h2>
+                <p>ثبت خروجی کالا از انبار</p>
+                
+                <a href="{% url 'inventory:download_stock_out_template' %}" class="btn btn-danger">
+                    📋 دانلود قالب خروجی
+                </a>
+                
+                <div class="upload-area" id="stockout-upload-area">
+                    <p>فایل Excel خروجی انبار را اینجا رها کنید یا کلیک کنید</p>
+                    <input type="file" id="stockout-file" class="file-input" accept=".xlsx">
+                    <button class="btn btn-primary" onclick="document.getElementById('stockout-file').click()">
+                        انتخاب فایل
+                    </button>
+                </div>
+                
+                <div class="loading" id="stockout-loading">
+                    <div class="spinner"></div>
+                    <p>در حال پردازش فایل خروجی...</p>
+                </div>
+                
+                <form id="stockout-form" action="{% url 'inventory:upload_stock_out_excel' %}" method="post" enctype="multipart/form-data" style="display: none;">
+                    {% csrf_token %}
+                    <input type="file" name="excel_file" id="stockout-file-input">
+                </form>
+            </div>
+            
+            <!-- گزارش موجودی -->
+            <div class="section">
+                <h2>📊 گزارش موجودی</h2>
+                <p>دانلود گزارش کامل موجودی انبار</p>
+                
+                <a href="{% url 'inventory:download_inventory_report' %}" class="btn btn-info">
+                    📊 دانلود گزارش موجودی
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // تنظیمات برای هر بخش
+        const sections = [
+            { id: 'unified', formId: 'unified-form', fileInputId: 'unified-file', fileInputNameId: 'unified-file-input', loadingId: 'unified-loading' },
+            { id: 'transfer', formId: 'transfer-form', fileInputId: 'transfer-file', fileInputNameId: 'transfer-file-input', loadingId: 'transfer-loading' },
+            { id: 'stockin', formId: 'stockin-form', fileInputId: 'stockin-file', fileInputNameId: 'stockin-file-input', loadingId: 'stockin-loading' },
+            { id: 'stockout', formId: 'stockout-form', fileInputId: 'stockout-file', fileInputNameId: 'stockout-file-input', loadingId: 'stockout-loading' }
+        ];
+
+        sections.forEach(section => {
+            const fileInput = document.getElementById(section.fileInputId);
+            const form = document.getElementById(section.formId);
+            const fileInputName = document.getElementById(section.fileInputNameId);
+            const loading = document.getElementById(section.loadingId);
+            const uploadArea = document.getElementById(section.id + '-upload-area');
+
+            // تغییر فایل
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    const file = e.target.files[0];
+                    fileInputName.files = e.target.files;
+                    
+                    // نمایش نام فایل
+                    uploadArea.innerHTML = `
+                        <p>فایل انتخاب شده: <strong>${file.name}</strong></p>
+                        <button class="btn btn-success" onclick="submitForm('${section.formId}')">
+                            آپلود فایل ${section.id === 'unified' ? 'یکپارچه' : section.id === 'transfer' ? 'انتقال' : section.id === 'stockin' ? 'ورودی' : 'خروجی'}
+                        </button>
+                        <button class="btn btn-warning" onclick="resetUpload('${section.id}')">
+                            انتخاب فایل جدید
+                        </button>
+                    `;
+                }
+            });
+
+            // Drag and Drop
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const file = files[0];
+                    if (file.name.endsWith('.xlsx')) {
+                        fileInput.files = files;
+                        fileInputName.files = files;
+                        
+                        uploadArea.innerHTML = `
+                            <p>فایل انتخاب شده: <strong>${file.name}</strong></p>
+                            <button class="btn btn-success" onclick="submitForm('${section.formId}')">
+                                آپلود فایل ${section.id === 'unified' ? 'یکپارچه' : section.id === 'transfer' ? 'انتقال' : section.id === 'stockin' ? 'ورودی' : 'خروجی'}
+                            </button>
+                            <button class="btn btn-warning" onclick="resetUpload('${section.id}')">
+                                انتخاب فایل جدید
+                            </button>
+                        `;
+                    } else {
+                        alert('فقط فایل‌های Excel (.xlsx) قابل قبول هستند');
+                    }
+                }
+            });
+        });
+
+        function submitForm(formId) {
+            const form = document.getElementById(formId);
+            const loading = document.getElementById(formId.replace('-form', '-loading'));
+            
+            loading.style.display = 'block';
+            form.submit();
+        }
+
+        function resetUpload(sectionId) {
+            const uploadArea = document.getElementById(sectionId + '-upload-area');
+            const fileInput = document.getElementById(sectionId + '-file');
+            
+            fileInput.value = '';
+            uploadArea.innerHTML = `
+                <p>فایل Excel ${sectionId === 'unified' ? 'یکپارچه' : sectionId === 'transfer' ? 'انتقال' : sectionId === 'stockin' ? 'ورودی' : 'خروجی'} را اینجا رها کنید یا کلیک کنید</p>
+                <input type="file" id="${sectionId}-file" class="file-input" accept=".xlsx">
+                <button class="btn btn-primary" onclick="document.getElementById('${sectionId}-file').click()">
+                    انتخاب فایل
+                </button>
+            `;
+        }
+    </script>
+</body>
+</html>
