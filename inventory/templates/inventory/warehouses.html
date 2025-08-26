@@ -1,5 +1,6 @@
 {% extends 'admin/base_site.html' %}
 {% load static %}
+{% load persian_dates %}
 
 {% block title %}مدیریت انبارها{% endblock %}
 
@@ -279,7 +280,7 @@
                                 <span class="status-inactive">غیرفعال</span>
                             {% endif %}
                         </td>
-                        <td>{{ warehouse.created_at|date:"Y/m/d" }}</td>
+                        <td>{{ warehouse.created_at|persian_date:"%Y/%m/%d" }}</td>
                         <td>
                             <div class="warehouse-actions">
                                 <a href="{% url 'admin:inventory_warehouse_change' warehouse.id %}" class="action-btn edit-btn">ویرایش</a>

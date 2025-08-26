@@ -5,6 +5,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from datetime import datetime, date
 from django.contrib.auth.models import User
 from .models import MaterialType, Supplier, Customer, StockIn, StockOut, Inventory, StockTransfer
+from .utils import gregorian_to_persian_str, gregorian_to_persian_datetime_str
 import os
 
 def create_unified_stock_template():
@@ -630,7 +631,7 @@ def export_inventory_to_excel():
         ws.cell(row=row, column=1, value=inventory.material_type.name)
         ws.cell(row=row, column=2, value=inventory.material_type.unit)
         ws.cell(row=row, column=3, value=inventory.current_quantity or 0)
-        ws.cell(row=row, column=4, value=inventory.last_updated.strftime('%Y-%m-%d %H:%M'))
+        ws.cell(row=row, column=4, value=gregorian_to_persian_datetime_str(inventory.last_updated, "%Y/%m/%d %H:%M"))
     
     # ذخیره فایل
     filename = f"موجودی_انبار_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"

@@ -14,14 +14,19 @@ from .excel_utils import (
     export_inventory_to_excel, create_stock_transfer_template,
     import_stock_transfer_excel
 )
+from .utils import gregorian_to_persian_str, gregorian_to_persian_datetime_str
 
 @admin.register(Warehouse)
 class WarehouseAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'manager', 'phone', 'is_active', 'created_at']
+    list_display = ['name', 'code', 'manager', 'phone', 'is_active', 'persian_created_at']
     list_filter = ['is_active', 'created_at']
     search_fields = ['name', 'code', 'manager', 'phone']
     readonly_fields = ['created_at']
     ordering = ['name']
+    
+    def persian_created_at(self, obj):
+        return gregorian_to_persian_str(obj.created_at, "%Y/%m/%d")
+    persian_created_at.short_description = 'تاریخ ایجاد (شمسی)'
 
 @admin.register(MaterialType)
 class MaterialTypeAdmin(admin.ModelAdmin):
@@ -31,23 +36,35 @@ class MaterialTypeAdmin(admin.ModelAdmin):
 
 @admin.register(Supplier)
 class SupplierAdmin(admin.ModelAdmin):
-    list_display = ['name', 'contact_person', 'phone', 'address', 'created_at']
+    list_display = ['name', 'contact_person', 'phone', 'address', 'persian_created_at']
     search_fields = ['name', 'contact_person', 'phone']
     list_filter = ['created_at']
+    
+    def persian_created_at(self, obj):
+        return gregorian_to_persian_str(obj.created_at, "%Y/%m/%d")
+    persian_created_at.short_description = 'تاریخ ایجاد (شمسی)'
 
 @admin.register(Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ['name', 'contact_person', 'phone', 'address', 'created_at']
+    list_display = ['name', 'contact_person', 'phone', 'address', 'persian_created_at']
     search_fields = ['name', 'contact_person', 'phone']
     list_filter = ['created_at']
+    
+    def persian_created_at(self, obj):
+        return gregorian_to_persian_str(obj.created_at, "%Y/%m/%d")
+    persian_created_at.short_description = 'تاریخ ایجاد (شمسی)'
 
 @admin.register(Inventory)
 class InventoryAdmin(admin.ModelAdmin):
-    list_display = ['warehouse', 'material_type', 'current_quantity', 'unit_display', 'last_updated']
+    list_display = ['warehouse', 'material_type', 'current_quantity', 'unit_display', 'persian_last_updated']
     list_filter = ['warehouse', 'material_type', 'last_updated']
     search_fields = ['warehouse__name', 'material_type__name']
     readonly_fields = ['last_updated']
     actions = ['export_inventory_excel']
+    
+    def persian_last_updated(self, obj):
+        return gregorian_to_persian_datetime_str(obj.last_updated, "%Y/%m/%d %H:%M")
+    persian_last_updated.short_description = 'آخرین بروزرسانی (شمسی)'
     
     def unit_display(self, obj):
         return obj.material_type.unit
@@ -68,12 +85,22 @@ class InventoryAdmin(admin.ModelAdmin):
 
 @admin.register(StockIn)
 class StockInAdmin(admin.ModelAdmin):
-    list_display = ['warehouse', 'material_type', 'supplier', 'quantity', 'unit_price', 'total_price', 'manual_date', 'created_at']
+    list_display = ['warehouse', 'material_type', 'supplier', 'quantity', 'unit_price', 'total_price', 'persian_manual_date', 'persian_created_at']
     list_filter = ['warehouse', 'material_type', 'supplier', 'created_at', 'manual_date']
     search_fields = ['warehouse__name', 'material_type__name', 'supplier__name', 'invoice_number']
     readonly_fields = ['total_price', 'created_at']
     date_hierarchy = 'created_at'
     actions = ['export_stock_in_excel']
+    
+    def persian_manual_date(self, obj):
+        if obj.manual_date:
+            return gregorian_to_persian_str(obj.manual_date, "%Y/%m/%d")
+        return "-"
+    persian_manual_date.short_description = 'تاریخ ورود دستی (شمسی)'
+    
+    def persian_created_at(self, obj):
+        return gregorian_to_persian_datetime_str(obj.created_at, "%Y/%m/%d %H:%M")
+    persian_created_at.short_description = 'تاریخ ثبت (شمسی)'
     
     def get_urls(self):
         urls = super().get_urls()
@@ -166,7 +193,7 @@ class StockInAdmin(admin.ModelAdmin):
                 ws.cell(row=row, column=5, value=stock_in.unit_price or 0)
                 ws.cell(row=row, column=6, value=stock_in.total_price or 0)
                 ws.cell(row=row, column=7, value=stock_in.invoice_number or "")
-                ws.cell(row=row, column=8, value=stock_in.manual_date.strftime('%Y-%m-%d') if stock_in.manual_date else "")
+                ws.cell(row=row, column=8, value=gregorian_to_persian_str(stock_in.manual_date, "%Y/%m/%d") if stock_in.manual_date else "")
                 ws.cell(row=row, column=9, value=stock_in.notes or "")
             
             # ذخیره فایل
@@ -188,12 +215,22 @@ class StockInAdmin(admin.ModelAdmin):
 
 @admin.register(StockOut)
 class StockOutAdmin(admin.ModelAdmin):
-    list_display = ['warehouse', 'material_type', 'customer', 'quantity', 'unit_price', 'total_price', 'manual_date', 'created_at']
+    list_display = ['warehouse', 'material_type', 'customer', 'quantity', 'unit_price', 'total_price', 'persian_manual_date', 'persian_created_at']
     list_filter = ['warehouse', 'material_type', 'customer', 'created_at', 'manual_date']
     search_fields = ['warehouse__name', 'material_type__name', 'customer__name', 'invoice_number']
     readonly_fields = ['total_price', 'created_at']
     date_hierarchy = 'created_at'
     actions = ['export_stock_out_excel']
+    
+    def persian_manual_date(self, obj):
+        if obj.manual_date:
+            return gregorian_to_persian_str(obj.manual_date, "%Y/%m/%d")
+        return "-"
+    persian_manual_date.short_description = 'تاریخ خروج دستی (شمسی)'
+    
+    def persian_created_at(self, obj):
+        return gregorian_to_persian_datetime_str(obj.created_at, "%Y/%m/%d %H:%M")
+    persian_created_at.short_description = 'تاریخ ثبت (شمسی)'
     
     def get_urls(self):
         urls = super().get_urls()
@@ -285,7 +322,7 @@ class StockOutAdmin(admin.ModelAdmin):
                 ws.cell(row=row, column=5, value=stock_out.unit_price or 0)
                 ws.cell(row=row, column=6, value=stock_out.total_price or 0)
                 ws.cell(row=row, column=7, value=stock_out.invoice_number or "")
-                ws.cell(row=row, column=8, value=stock_out.manual_date.strftime('%Y-%m-%d') if stock_out.manual_date else "")
+                ws.cell(row=row, column=8, value=gregorian_to_persian_str(stock_out.manual_date, "%Y/%m/%d") if stock_out.manual_date else "")
                 ws.cell(row=row, column=9, value=stock_out.notes or "")
             
             # ذخیره فایل
@@ -307,12 +344,16 @@ class StockOutAdmin(admin.ModelAdmin):
 
 @admin.register(StockTransfer)
 class StockTransferAdmin(admin.ModelAdmin):
-    list_display = ['source_warehouse', 'destination_warehouse', 'material_type', 'quantity', 'created_by', 'created_at']
+    list_display = ['source_warehouse', 'destination_warehouse', 'material_type', 'quantity', 'created_by', 'persian_created_at']
     list_filter = ['source_warehouse', 'destination_warehouse', 'created_at', 'material_type']
     search_fields = ['source_warehouse__name', 'destination_warehouse__name', 'material_type__name', 'notes']
     readonly_fields = ['created_by', 'created_at']
     date_hierarchy = 'created_at'
     actions = ['export_stock_transfer_excel']
+    
+    def persian_created_at(self, obj):
+        return gregorian_to_persian_datetime_str(obj.created_at, "%Y/%m/%d %H:%M")
+    persian_created_at.short_description = 'تاریخ انتقال (شمسی)'
     
     def get_urls(self):
         urls = super().get_urls()
@@ -410,7 +451,7 @@ class StockTransferAdmin(admin.ModelAdmin):
                 ws.cell(row=row, column=4, value=transfer.quantity or 0)
                 ws.cell(row=row, column=5, value=transfer.notes)
                 ws.cell(row=row, column=6, value=transfer.created_by.username)
-                ws.cell(row=row, column=7, value=transfer.created_at.strftime('%Y-%m-%d %H:%M'))
+                ws.cell(row=row, column=7, value=gregorian_to_persian_datetime_str(transfer.created_at, "%Y/%m/%d %H:%M"))
             
             # ذخیره فایل
             filename = f"انتقالات_انبار_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
