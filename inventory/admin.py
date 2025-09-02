@@ -188,13 +188,14 @@ class StockInAdmin(admin.ModelAdmin):
             for row, stock_in in enumerate(queryset, 2):
                 ws.cell(row=row, column=1, value=stock_in.warehouse.name)
                 ws.cell(row=row, column=2, value=stock_in.material_type.name)
-                ws.cell(row=row, column=3, value=stock_in.supplier.name)
-                ws.cell(row=row, column=4, value=stock_in.quantity or 0)
-                ws.cell(row=row, column=5, value=stock_in.unit_price or 0)
-                ws.cell(row=row, column=6, value=stock_in.total_price or 0)
-                ws.cell(row=row, column=7, value=stock_in.invoice_number or "")
-                ws.cell(row=row, column=8, value=gregorian_to_persian_str(stock_in.manual_date, "%Y/%m/%d") if stock_in.manual_date else "")
-                ws.cell(row=row, column=9, value=stock_in.notes or "")
+                ws.cell(row=row, column=3, value=stock_in.supplier.name if stock_in.supplier else "")
+                ws.cell(row=row, column=4, value=stock_in.customer.name if stock_in.customer else "")
+                ws.cell(row=row, column=5, value=stock_in.quantity or 0)
+                ws.cell(row=row, column=6, value=stock_in.unit_price or 0)
+                ws.cell(row=row, column=7, value=stock_in.total_price or 0)
+                ws.cell(row=row, column=8, value=stock_in.invoice_number or "")
+                ws.cell(row=row, column=9, value=gregorian_to_persian_str(stock_in.manual_date, "%Y/%m/%d") if stock_in.manual_date else "")
+                ws.cell(row=row, column=10, value=stock_in.notes or "")
             
             # ذخیره فایل
             filename = f"ورودی_انبار_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
@@ -317,13 +318,14 @@ class StockOutAdmin(admin.ModelAdmin):
             for row, stock_out in enumerate(queryset, 2):
                 ws.cell(row=row, column=1, value=stock_out.warehouse.name)
                 ws.cell(row=row, column=2, value=stock_out.material_type.name)
-                ws.cell(row=row, column=3, value=stock_out.customer.name)
-                ws.cell(row=row, column=4, value=stock_out.quantity or 0)
-                ws.cell(row=row, column=5, value=stock_out.unit_price or 0)
-                ws.cell(row=row, column=6, value=stock_out.total_price or 0)
-                ws.cell(row=row, column=7, value=stock_out.invoice_number or "")
-                ws.cell(row=row, column=8, value=gregorian_to_persian_str(stock_out.manual_date, "%Y/%m/%d") if stock_out.manual_date else "")
-                ws.cell(row=row, column=9, value=stock_out.notes or "")
+                ws.cell(row=row, column=3, value=stock_out.customer.name if stock_out.customer else "")
+                ws.cell(row=row, column=4, value=stock_out.supplier.name if stock_out.supplier else "")
+                ws.cell(row=row, column=5, value=stock_out.quantity or 0)
+                ws.cell(row=row, column=6, value=stock_out.unit_price or 0)
+                ws.cell(row=row, column=7, value=stock_out.total_price or 0)
+                ws.cell(row=row, column=8, value=stock_out.invoice_number or "")
+                ws.cell(row=row, column=9, value=gregorian_to_persian_str(stock_out.manual_date, "%Y/%m/%d") if stock_out.manual_date else "")
+                ws.cell(row=row, column=10, value=stock_out.notes or "")
             
             # ذخیره فایل
             filename = f"خروجی_انبار_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"

@@ -232,6 +232,7 @@ def create_stock_in_template():
         "انبار",
         "نام کالا",
         "هویت کالا", 
+        "مشتری",
         "مقدار",
         "قیمت واحد",
         "شماره بارنامه",
@@ -247,14 +248,14 @@ def create_stock_in_template():
         cell.alignment = Alignment(horizontal="center", vertical="center")
     
     # تنظیم عرض ستون‌ها
-    column_widths = [15, 20, 25, 15, 15, 20, 20, 30]
+    column_widths = [15, 20, 25, 20, 15, 15, 20, 20, 30]
     for col, width in enumerate(column_widths, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
     
     # اضافه کردن نمونه داده
     sample_data = [
-        ["انبار اصلی", "میلگرد 16", "شرکت آهن آلات تهران", 1000, 15000, "BR001", "2024-01-15", "ورودی اولیه"],
-        ["انبار اصلی", "ورق فولادی", "کارخانه فولاد اصفهان", 500, 25000, "BR002", "2024-01-16", "ورودی دوم"],
+        ["انبار اصلی", "میلگرد 16", "شرکت آهن آلات تهران", "خودتان", 1000, 15000, "BR001", "2024-01-15", "ورودی اولیه"],
+        ["انبار اصلی", "ورق فولادی", "کارخانه فولاد اصفهان", "خودتان", 500, 25000, "BR002", "2024-01-16", "ورودی دوم"],
     ]
     
     for row, data in enumerate(sample_data, 2):
@@ -280,6 +281,7 @@ def create_stock_out_template():
         "انبار",
         "نام کالا",
         "نام مشتری", 
+        "هویت کالای خروجی",
         "مقدار",
         "قیمت واحد",
         "شماره بارنامه",
@@ -295,14 +297,14 @@ def create_stock_out_template():
         cell.alignment = Alignment(horizontal="center", vertical="center")
     
     # تنظیم عرض ستون‌ها
-    column_widths = [15, 20, 25, 15, 15, 20, 20, 30]
+    column_widths = [15, 20, 25, 25, 15, 15, 20, 20, 30]
     for col, width in enumerate(column_widths, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
     
     # اضافه کردن نمونه داده
     sample_data = [
-        ["انبار اصلی", "میلگرد 16", "شرکت ساختمانی آسمان", 200, 18000, "BR003", "2024-01-17", "خروجی اولیه"],
-        ["انبار اصلی", "ورق فولادی", "پروژه برج تهران", 100, 28000, "BR004", "2024-01-18", "خروجی دوم"],
+        ["انبار اصلی", "میلگرد 16", "شرکت ساختمانی آسمان", "شرکت آهن آلات تهران", 200, 18000, "BR003", "2024-01-17", "خروجی اولیه"],
+        ["انبار اصلی", "ورق فولادی", "پروژه برج تهران", "کارخانه فولاد اصفهان", 100, 28000, "BR004", "2024-01-18", "خروجی دوم"],
     ]
     
     for row, data in enumerate(sample_data, 2):
@@ -357,6 +359,19 @@ def import_stock_in_excel(file_path, user):
                     name=supplier_name
                 )
                 
+                # دریافت یا ایجاد مشتری - پیش‌فرض "خودتان"
+                customer_name = None
+                if 'مشتری' in row and pd.notna(row['مشتری']):
+                    customer_name = str(row['مشتری']).strip()
+                
+                # اگر مشتری خالی باشد، پیش‌فرض "خودتان" در نظر گرفته می‌شود
+                if not customer_name or customer_name == "":
+                    customer_name = "خودتان"
+                
+                customer, created = Customer.objects.get_or_create(
+                    name=customer_name
+                )
+                
                 # تبدیل داده‌ها
                 quantity = int(row['مقدار']) if pd.notna(row['مقدار']) else 0
                 unit_price = int(row['قیمت واحد']) if pd.notna(row['قیمت واحد']) else 0
@@ -377,6 +392,7 @@ def import_stock_in_excel(file_path, user):
                     warehouse=warehouse,
                     material_type=material_type,
                     supplier=supplier,
+                    customer=customer,
                     quantity=quantity,
                     unit_price=unit_price,
                     invoice_number=invoice_number,
@@ -435,6 +451,17 @@ def import_stock_out_excel(file_path, user):
                     name=customer_name
                 )
                 
+                # دریافت یا ایجاد هویت کالای خروجی (supplier)
+                supplier_name = None
+                if 'هویت کالای خروجی' in row and pd.notna(row['هویت کالای خروجی']):
+                    supplier_name = str(row['هویت کالای خروجی']).strip()
+                
+                supplier = None
+                if supplier_name:
+                    supplier, created = Supplier.objects.get_or_create(
+                        name=supplier_name
+                    )
+                
                 # تبدیل داده‌ها
                 quantity = int(row['مقدار']) if pd.notna(row['مقدار']) else 0
                 unit_price = int(row['قیمت واحد']) if pd.notna(row['قیمت واحد']) else 0
@@ -450,14 +477,29 @@ def import_stock_out_excel(file_path, user):
                     date_value = row['تاریخ (YYYY-MM-DD)']
                     manual_date = parse_persian_date(date_value)
                 
-                # بررسی موجودی
+                # بررسی موجودی - بر اساس supplier
                 try:
-                    inventory = Inventory.objects.get(warehouse=warehouse, material_type=material_type)
+                    if supplier:
+                        # اگر supplier مشخص باشد، موجودی آن supplier بررسی می‌شود
+                        inventory = Inventory.objects.get(
+                            warehouse=warehouse, 
+                            material_type=material_type,
+                            supplier=supplier
+                        )
+                    else:
+                        # اگر supplier مشخص نباشد، موجودی کلی بررسی می‌شود
+                        inventory = Inventory.objects.get(
+                            warehouse=warehouse, 
+                            material_type=material_type
+                        )
+                    
                     if inventory.current_quantity < quantity:
-                        results["errors"].append(f"ردیف {index + 2}: موجودی ناکافی برای {material_name} در انبار {warehouse.name}")
+                        supplier_info = f" از {supplier.name}" if supplier else ""
+                        results["errors"].append(f"ردیف {index + 2}: موجودی ناکافی برای {material_name}{supplier_info} در انبار {warehouse.name} (موجودی: {inventory.current_quantity}, درخواستی: {quantity})")
                         continue
                 except Inventory.DoesNotExist:
-                    results["errors"].append(f"ردیف {index + 2}: موجودی برای {material_name} در انبار {warehouse.name} یافت نشد")
+                    supplier_info = f" از {supplier.name}" if supplier else ""
+                    results["errors"].append(f"ردیف {index + 2}: موجودی برای {material_name}{supplier_info} در انبار {warehouse.name} یافت نشد")
                     continue
                 
                 # ایجاد رکورد خروجی
@@ -465,6 +507,7 @@ def import_stock_out_excel(file_path, user):
                     warehouse=warehouse,
                     material_type=material_type,
                     customer=customer,
+                    supplier=supplier,
                     quantity=quantity,
                     unit_price=unit_price,
                     invoice_number=invoice_number,
