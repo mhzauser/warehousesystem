@@ -85,7 +85,17 @@ def material_types(request):
 # مدیریت هویت‌های کالا
 @login_required
 def suppliers(request):
-    """مدیریت هویت‌های کالا"""
+    """
+    مدیریت هویت‌های کالا (تامین‌کنندگان)
+    
+    این تابع مسئول نمایش لیست تامین‌کنندگان و اضافه کردن تامین‌کننده جدید است.
+    
+    Args:
+        request: درخواست HTTP که شامل اطلاعات فرم در صورت POST است
+        
+    Returns:
+        صفحه HTML با لیست تامین‌کنندگان یا ریدایرکت در صورت اضافه شدن موفق
+    """
     if request.method == 'POST':
         name = request.POST.get('name')
         contact_person = request.POST.get('contact_person', '')
