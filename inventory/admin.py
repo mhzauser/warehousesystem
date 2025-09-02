@@ -60,7 +60,8 @@ class InventoryAdmin(admin.ModelAdmin):
     list_filter = ['warehouse', 'material_type', 'supplier', 'last_updated']
     search_fields = ['warehouse__name', 'material_type__name', 'supplier__name']
     readonly_fields = ['last_updated']
-    actions = ['export_inventory_excel']
+    actions = ['export_inventory_excel', 'filter_by_supplier']
+    ordering = ['warehouse__name', 'material_type__name', 'supplier__name']
     
     def persian_last_updated(self, obj):
         return gregorian_to_persian_datetime_str(obj.last_updated, "%Y/%m/%d %H:%M")
@@ -82,6 +83,15 @@ class InventoryAdmin(admin.ModelAdmin):
             return redirect('admin:inventory_inventory_changelist')
     
     export_inventory_excel.short_description = "صدور موجودی به Excel"
+    
+    def filter_by_supplier(self, request, queryset):
+        """فیلتر موجودی بر اساس Supplier"""
+        supplier_id = request.GET.get('supplier')
+        if supplier_id:
+            queryset = queryset.filter(supplier_id=supplier_id)
+        return queryset
+    
+    filter_by_supplier.short_description = "فیلتر بر اساس هویت کالا"
 
 @admin.register(StockIn)
 class StockInAdmin(admin.ModelAdmin):
@@ -186,8 +196,8 @@ class StockInAdmin(admin.ModelAdmin):
             
             # داده‌ها
             for row, stock_in in enumerate(queryset, 2):
-                ws.cell(row=row, column=1, value=stock_in.warehouse.name)
-                ws.cell(row=row, column=2, value=stock_in.material_type.name)
+                ws.cell(row=row, column=1, value=stock_in.warehouse.name if stock_in.warehouse else "")
+                ws.cell(row=row, column=2, value=stock_in.material_type.name if stock_in.material_type else "")
                 ws.cell(row=row, column=3, value=stock_in.supplier.name if stock_in.supplier else "")
                 ws.cell(row=row, column=4, value=stock_in.customer.name if stock_in.customer else "")
                 ws.cell(row=row, column=5, value=stock_in.quantity or 0)
@@ -311,13 +321,14 @@ class StockOutAdmin(admin.ModelAdmin):
             
             for col, header in enumerate(headers, 1):
                 cell = ws.cell(row=1, column=col, value=header)
-                cell.font = Font(bold=True, color="C5504B", end_color="C5504B", fill_type="solid")
+                cell.font = Font(bold=True, color="FFFFFF")
+                cell.fill = PatternFill(start_color="C5504B", end_color="C5504B", fill_type="solid")
                 cell.alignment = Alignment(horizontal="center", vertical="center")
             
             # داده‌ها
             for row, stock_out in enumerate(queryset, 2):
-                ws.cell(row=row, column=1, value=stock_out.warehouse.name)
-                ws.cell(row=row, column=2, value=stock_out.material_type.name)
+                ws.cell(row=row, column=1, value=stock_out.warehouse.name if stock_out.warehouse else "")
+                ws.cell(row=row, column=2, value=stock_out.material_type.name if stock_out.material_type else "")
                 ws.cell(row=row, column=3, value=stock_out.customer.name if stock_out.customer else "")
                 ws.cell(row=row, column=4, value=stock_out.supplier.name if stock_out.supplier else "")
                 ws.cell(row=row, column=5, value=stock_out.quantity or 0)

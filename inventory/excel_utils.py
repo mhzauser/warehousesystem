@@ -658,14 +658,16 @@ def import_stock_transfer_excel(file_path, user):
         return {"success": [], "errors": [f"خطا در خواندن فایل: {str(e)}"]}
 
 def export_inventory_to_excel():
-    """صدور موجودی انبار به فایل Excel"""
+    """صدور موجودی انبار به فایل Excel - تفکیک بر اساس Supplier"""
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "موجودی انبار"
     
     # تعریف هدرها
     headers = [
+        "انبار",
         "نام کالا",
+        "هویت کالا (Supplier)",
         "واحد اندازه‌گیری",
         "موجودی فعلی",
         "آخرین بروزرسانی"
@@ -679,20 +681,23 @@ def export_inventory_to_excel():
         cell.alignment = Alignment(horizontal="center", vertical="center")
     
     # تنظیم عرض ستون‌ها
-    column_widths = [25, 20, 15, 20]
+    column_widths = [20, 25, 25, 20, 15, 20]
     for col, width in enumerate(column_widths, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = width
     
-    # اضافه کردن داده‌ها
-    inventories = Inventory.objects.all().select_related('material_type')
+    # اضافه کردن داده‌ها - تفکیک بر اساس Supplier
+    inventories = Inventory.objects.all().select_related('warehouse', 'material_type', 'supplier').order_by('warehouse__name', 'material_type__name', 'supplier__name')
+    
     for row, inventory in enumerate(inventories, 2):
-        ws.cell(row=row, column=1, value=inventory.material_type.name)
-        ws.cell(row=row, column=2, value=inventory.material_type.unit)
-        ws.cell(row=row, column=3, value=inventory.current_quantity or 0)
-        ws.cell(row=row, column=4, value=gregorian_to_persian_datetime_str(inventory.last_updated, "%Y/%m/%d %H:%M"))
+        ws.cell(row=row, column=1, value=inventory.warehouse.name if inventory.warehouse else "")
+        ws.cell(row=row, column=2, value=inventory.material_type.name if inventory.material_type else "")
+        ws.cell(row=row, column=3, value=inventory.supplier.name if inventory.supplier else "بدون هویت")
+        ws.cell(row=row, column=4, value=inventory.material_type.unit if inventory.material_type else "")
+        ws.cell(row=row, column=5, value=inventory.current_quantity or 0)
+        ws.cell(row=row, column=6, value=gregorian_to_persian_datetime_str(inventory.last_updated, "%Y/%m/%d %H:%M") if inventory.last_updated else "")
     
     # ذخیره فایل
-    filename = f"موجودی_انبار_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    filename = f"موجودی_انبار_تفکیک_بر_اساس_هویت_کالا_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
     filepath = os.path.join("media", "excel_reports", filename)
     os.makedirs(os.path.dirname(filepath), exist_ok=True)
     wb.save(filepath)
