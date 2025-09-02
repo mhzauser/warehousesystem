@@ -5,7 +5,7 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 from datetime import datetime, date
 from django.contrib.auth.models import User
 from .models import MaterialType, Supplier, Customer, StockIn, StockOut, Inventory, StockTransfer, Warehouse
-from .utils import gregorian_to_persian_str, gregorian_to_persian_datetime_str
+from .utils import gregorian_to_persian_str, gregorian_to_persian_datetime_str, parse_persian_date
 import os
 
 def create_unified_stock_template():
@@ -109,13 +109,13 @@ def import_unified_stock_excel(file_path, user):
                 # دریافت نوع عملیات
                 operation_type = str(row[found_columns['نوع عملیات']]).strip()
                 if operation_type not in ['ورودی', 'خروجی']:
-                    results["errors"].append(f"ردیف {index + 2}: نوع عملیات نامعتبر - باید 'ورودی' یا 'خروجی' باشد")
+                    results["errors"].append(f"ردیف {index + 2}: ❌ نوع عملیات نامعتبر - باید 'ورودی' یا 'خروجی' باشد")
                     continue
                 
                 # دریافت یا ایجاد نام کالا
                 material_name = str(row[found_columns['نام کالا']]).strip()
                 if not material_name:
-                    results["errors"].append(f"ردیف {index + 2}: نام کالا خالی است")
+                    results["errors"].append(f"ردیف {index + 2}: ❌ نام کالا خالی است")
                     continue
                     
                 material_type, created = MaterialType.objects.get_or_create(
@@ -126,7 +126,7 @@ def import_unified_stock_excel(file_path, user):
                 # دریافت هویت کالا/نام مشتری
                 supplier_customer_name = str(row[found_columns['هویت کالا/نام مشتری']]).strip()
                 if not supplier_customer_name:
-                    results["errors"].append(f"ردیف {index + 2}: هویت کالا/نام مشتری خالی است")
+                    results["errors"].append(f"ردیف {index + 2}: ❌ هویت کالا/نام مشتری خالی است")
                     continue
                 
                 # تبدیل داده‌ها
@@ -135,16 +135,11 @@ def import_unified_stock_excel(file_path, user):
                 invoice_number = str(row[found_columns['شماره بارنامه']]).strip() if pd.notna(row[found_columns['شماره بارنامه']]) else ""
                 notes = str(row[found_columns['یادداشت‌ها']]).strip() if pd.notna(row[found_columns['یادداشت‌ها']]) else ""
                 
-                # تبدیل تاریخ
+                # تبدیل تاریخ - پشتیبانی از تاریخ‌های فارسی و میلادی
                 manual_date = None
                 if pd.notna(row[found_columns['تاریخ (YYYY-MM-DD)']]):
-                    try:
-                        if isinstance(row[found_columns['تاریخ (YYYY-MM-DD)']], str):
-                            manual_date = datetime.strptime(row[found_columns['تاریخ (YYYY-MM-DD)']], '%Y-%m-%d').date()
-                        else:
-                            manual_date = row[found_columns['تاریخ (YYYY-MM-DD)']].date()
-                    except:
-                        manual_date = None
+                    date_value = row[found_columns['تاریخ (YYYY-MM-DD)']]
+                    manual_date = parse_persian_date(date_value)
                 
                 # دریافت انبار
                 warehouse_name = str(row[found_columns['انبار']]).strip() if 'انبار' in found_columns and pd.notna(row[found_columns['انبار']]) else "انبار اصلی"
@@ -181,7 +176,7 @@ def import_unified_stock_excel(file_path, user):
                     inventory.current_quantity += quantity
                     inventory.save()
                     
-                    results["success"].append(f"ردیف {index + 2}: ورودی {material_name} با موفقیت ثبت شد")
+                    results["success"].append(f"ردیف {index + 2}: ✅ ورودی {material_name} با موفقیت ثبت شد")
                     
                 elif operation_type == "خروجی":
                     # پردازش خروجی انبار
@@ -193,10 +188,10 @@ def import_unified_stock_excel(file_path, user):
                     try:
                         inventory = Inventory.objects.get(warehouse=warehouse, material_type=material_type)
                         if inventory.current_quantity < quantity:
-                            results["errors"].append(f"ردیف {index + 2}: موجودی ناکافی برای {material_name} در انبار {warehouse.name} (موجودی: {inventory.current_quantity}, درخواستی: {quantity})")
+                            results["errors"].append(f"ردیف {index + 2}: ❌ موجودی ناکافی برای {material_name} در انبار {warehouse.name} (موجودی: {inventory.current_quantity}, درخواستی: {quantity})")
                             continue
                     except Inventory.DoesNotExist:
-                        results["errors"].append(f"ردیف {index + 2}: موجودی برای {material_name} در انبار {warehouse.name} یافت نشد")
+                        results["errors"].append(f"ردیف {index + 2}: ❌ موجودی برای {material_name} در انبار {warehouse.name} یافت نشد")
                         continue
                     
                     # ایجاد رکورد خروجی
@@ -216,7 +211,7 @@ def import_unified_stock_excel(file_path, user):
                     inventory.current_quantity -= quantity
                     inventory.save()
                     
-                    results["success"].append(f"ردیف {index + 2}: خروجی {material_name} با موفقیت ثبت شد")
+                    results["success"].append(f"ردیف {index + 2}: ✅ خروجی {material_name} با موفقیت ثبت شد")
                 
             except Exception as e:
                 results["errors"].append(f"ردیف {index + 2}: خطا - {str(e)}")
@@ -224,7 +219,7 @@ def import_unified_stock_excel(file_path, user):
         return results
         
     except Exception as e:
-        return {"success": [], "errors": [f"خطا در خواندن فایل: {str(e)}"]}
+        return {"success": [], "errors": [f"❌ خطا در خواندن فایل: {str(e)}"]}
 
 def create_stock_in_template():
     """ایجاد قالب Excel برای ورودی انبار"""
@@ -344,8 +339,20 @@ def import_stock_in_excel(file_path, user):
                     defaults={'unit': 'کیلوگرم'}
                 )
                 
-                # دریافت یا ایجاد هویت کالا
-                supplier_name = str(row['هویت کالا']).strip()
+                # دریافت یا ایجاد هویت کالا - پشتیبانی از هر دو فرمت
+                supplier_name = None
+                if 'هویت کالا' in row:
+                    supplier_name = str(row['هویت کالا']).strip()
+                elif 'هویت کالا/نام مشتری' in row:
+                    supplier_name = str(row['هویت کالا/نام مشتری']).strip()
+                else:
+                    results["errors"].append(f"ردیف {index + 2}: ستون 'هویت کالا' یا 'هویت کالا/نام مشتری' یافت نشد")
+                    continue
+                
+                if not supplier_name:
+                    results["errors"].append(f"ردیف {index + 2}: هویت کالا خالی است")
+                    continue
+                
                 supplier, created = Supplier.objects.get_or_create(
                     name=supplier_name
                 )
@@ -356,16 +363,14 @@ def import_stock_in_excel(file_path, user):
                 invoice_number = str(row['شماره بارنامه']).strip() if pd.notna(row['شماره بارنامه']) else ""
                 notes = str(row['یادداشت‌ها']).strip() if pd.notna(row['یادداشت‌ها']) else ""
                 
-                # تبدیل تاریخ
+                # تبدیل تاریخ - پشتیبانی از تاریخ‌های فارسی و میلادی
                 manual_date = None
-                if pd.notna(row['تاریخ ورود (YYYY-MM-DD)']):
-                    try:
-                        if isinstance(row['تاریخ ورود (YYYY-MM-DD)'], str):
-                            manual_date = datetime.strptime(row['تاریخ ورود (YYYY-MM-DD)'], '%Y-%m-%d').date()
-                        else:
-                            manual_date = row['تاریخ ورود (YYYY-MM-DD)'].date()
-                    except:
-                        manual_date = None
+                if 'تاریخ ورود (YYYY-MM-DD)' in row and pd.notna(row['تاریخ ورود (YYYY-MM-DD)']):
+                    date_value = row['تاریخ ورود (YYYY-MM-DD)']
+                    manual_date = parse_persian_date(date_value)
+                elif 'تاریخ (YYYY-MM-DD)' in row and pd.notna(row['تاریخ (YYYY-MM-DD)']):
+                    date_value = row['تاریخ (YYYY-MM-DD)']
+                    manual_date = parse_persian_date(date_value)
                 
                 # ایجاد رکورد ورودی
                 stock_in = StockIn.objects.create(
@@ -412,8 +417,20 @@ def import_stock_out_excel(file_path, user):
                     defaults={'unit': 'کیلوگرم'}
                 )
                 
-                # دریافت یا ایجاد مشتری
-                customer_name = str(row['نام مشتری']).strip()
+                # دریافت یا ایجاد مشتری - پشتیبانی از هر دو فرمت
+                customer_name = None
+                if 'نام مشتری' in row:
+                    customer_name = str(row['نام مشتری']).strip()
+                elif 'هویت کالا/نام مشتری' in row:
+                    customer_name = str(row['هویت کالا/نام مشتری']).strip()
+                else:
+                    results["errors"].append(f"ردیف {index + 2}: ستون 'نام مشتری' یا 'هویت کالا/نام مشتری' یافت نشد")
+                    continue
+                
+                if not customer_name:
+                    results["errors"].append(f"ردیف {index + 2}: نام مشتری خالی است")
+                    continue
+                
                 customer, created = Customer.objects.get_or_create(
                     name=customer_name
                 )
@@ -424,16 +441,14 @@ def import_stock_out_excel(file_path, user):
                 invoice_number = str(row['شماره بارنامه']).strip() if pd.notna(row['شماره بارنامه']) else ""
                 notes = str(row['یادداشت‌ها']).strip() if pd.notna(row['یادداشت‌ها']) else ""
                 
-                # تبدیل تاریخ
+                # تبدیل تاریخ - پشتیبانی از تاریخ‌های فارسی و میلادی
                 manual_date = None
-                if pd.notna(row['تاریخ خروج (YYYY-MM-DD)']):
-                    try:
-                        if isinstance(row['تاریخ خروج (YYYY-MM-DD)'], str):
-                            manual_date = datetime.strptime(row['تاریخ خروج (YYYY-MM-DD)'], '%Y-%m-%d').date()
-                        else:
-                            manual_date = row['تاریخ خروج (YYYY-MM-DD)'].date()
-                    except:
-                        manual_date = None
+                if 'تاریخ خروج (YYYY-MM-DD)' in row and pd.notna(row['تاریخ خروج (YYYY-MM-DD)']):
+                    date_value = row['تاریخ خروج (YYYY-MM-DD)']
+                    manual_date = parse_persian_date(date_value)
+                elif 'تاریخ (YYYY-MM-DD)' in row and pd.notna(row['تاریخ (YYYY-MM-DD)']):
+                    date_value = row['تاریخ (YYYY-MM-DD)']
+                    manual_date = parse_persian_date(date_value)
                 
                 # بررسی موجودی
                 try:

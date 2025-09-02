@@ -1,6 +1,54 @@
 import jdatetime
 from datetime import datetime, date
 from django.utils import timezone
+import pandas as pd
+
+
+def parse_persian_date(date_str):
+    """
+    Parse Persian date string to Gregorian date
+    Supports formats like: 1404-01-26, 1404/01/26, 1404.01.26
+    """
+    if not date_str or pd.isna(date_str):
+        return None
+    
+    try:
+        # Convert to string if it's not already
+        date_str = str(date_str).strip()
+        
+        # Handle different separators
+        if '-' in date_str:
+            parts = date_str.split('-')
+        elif '/' in date_str:
+            parts = date_str.split('/')
+        elif '.' in date_str:
+            parts = date_str.split('.')
+        else:
+            return None
+        
+        if len(parts) != 3:
+            return None
+        
+        year, month, day = map(int, parts)
+        
+        # Check if it's a Persian date (year > 1400 for modern Persian dates)
+        if year > 1400:
+            # Convert Persian to Gregorian
+            persian_date = jdatetime.date(year, month, day)
+            return persian_date.togregorian()
+        elif 1900 <= year <= 2100:
+            # Assume it's already Gregorian
+            return date(year, month, day)
+        else:
+            # Try as Persian date anyway (for older dates)
+            try:
+                persian_date = jdatetime.date(year, month, day)
+                return persian_date.togregorian()
+            except:
+                return None
+            
+    except (ValueError, TypeError):
+        return None
 
 
 def to_persian_date(gregorian_date):

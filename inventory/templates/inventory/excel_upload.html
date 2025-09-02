@@ -200,7 +200,7 @@
                     <p>در حال پردازش فایل یکپارچه...</p>
                 </div>
                 
-                <form id="unified-form" action="{% url 'inventory:upload_unified_excel' %}" method="post" enctype="multipart/form-data" style="display: none;">
+                <form id="unified-form" style="display: none;">
                     {% csrf_token %}
                     <input type="file" name="excel_file" id="unified-file-input">
                 </form>
@@ -378,9 +378,61 @@
         function submitForm(formId) {
             const form = document.getElementById(formId);
             const loading = document.getElementById(formId.replace('-form', '-loading'));
+            const uploadArea = document.getElementById(formId.replace('-form', '-upload-area'));
             
-            loading.style.display = 'block';
-            form.submit();
+            if (formId === 'unified-form') {
+                // Unified upload uses AJAX
+                const formData = new FormData();
+                const fileInput = document.getElementById('unified-file-input');
+                formData.append('excel_file', fileInput.files[0]);
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                
+                loading.style.display = 'block';
+                
+                fetch('{% url "inventory:upload_unified_excel" %}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loading.style.display = 'none';
+                    
+                    if (data.success) {
+                        let resultHtml = '<div class="result success"><h4>✅ آپلود موفق</h4>';
+                        if (data.results && data.results.success) {
+                            resultHtml += '<ul>';
+                            data.results.success.forEach(msg => {
+                                resultHtml += `<li>${msg}</li>`;
+                            });
+                            resultHtml += '</ul>';
+                        }
+                        resultHtml += '</div>';
+                        
+                        if (data.results && data.results.errors) {
+                            resultHtml += '<div class="result error"><h4>❌ خطاها</h4><ul>';
+                            data.results.errors.forEach(msg => {
+                                resultHtml += `<li>${msg}</li>`;
+                            });
+                            resultHtml += '</ul></div>';
+                        }
+                        
+                        uploadArea.innerHTML = resultHtml + 
+                            '<button class="btn btn-warning" onclick="resetUpload(\'unified\')">آپلود فایل جدید</button>';
+                    } else {
+                        uploadArea.innerHTML = '<div class="result error"><h4>❌ خطا</h4><p>' + data.message + '</p></div>' +
+                            '<button class="btn btn-warning" onclick="resetUpload(\'unified\')">تلاش مجدد</button>';
+                    }
+                })
+                .catch(error => {
+                    loading.style.display = 'none';
+                    uploadArea.innerHTML = '<div class="result error"><h4>❌ خطا</h4><p>خطا در ارتباط با سرور</p></div>' +
+                        '<button class="btn btn-warning" onclick="resetUpload(\'unified\')">تلاش مجدد</button>';
+                });
+            } else {
+                // Other forms use regular submission
+                loading.style.display = 'block';
+                form.submit();
+            }
         }
 
         function resetUpload(sectionId) {
