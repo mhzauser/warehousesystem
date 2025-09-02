@@ -56,9 +56,9 @@ class CustomerAdmin(admin.ModelAdmin):
 
 @admin.register(Inventory)
 class InventoryAdmin(admin.ModelAdmin):
-    list_display = ['warehouse', 'material_type', 'current_quantity', 'unit_display', 'persian_last_updated']
-    list_filter = ['warehouse', 'material_type', 'last_updated']
-    search_fields = ['warehouse__name', 'material_type__name']
+    list_display = ['warehouse', 'material_type', 'supplier', 'current_quantity', 'unit_display', 'persian_last_updated']
+    list_filter = ['warehouse', 'material_type', 'supplier', 'last_updated']
+    search_fields = ['warehouse__name', 'material_type__name', 'supplier__name']
     readonly_fields = ['last_updated']
     actions = ['export_inventory_excel']
     
@@ -85,9 +85,9 @@ class InventoryAdmin(admin.ModelAdmin):
 
 @admin.register(StockIn)
 class StockInAdmin(admin.ModelAdmin):
-    list_display = ['warehouse', 'material_type', 'supplier', 'quantity', 'unit_price', 'total_price', 'persian_manual_date', 'persian_created_at']
-    list_filter = ['warehouse', 'material_type', 'supplier', 'created_at', 'manual_date']
-    search_fields = ['warehouse__name', 'material_type__name', 'supplier__name', 'invoice_number']
+    list_display = ['warehouse', 'material_type', 'supplier', 'customer', 'quantity', 'unit_price', 'total_price', 'persian_manual_date', 'persian_created_at']
+    list_filter = ['warehouse', 'material_type', 'supplier', 'customer', 'created_at', 'manual_date']
+    search_fields = ['warehouse__name', 'material_type__name', 'supplier__name', 'customer__name', 'invoice_number']
     readonly_fields = ['total_price', 'created_at']
     date_hierarchy = 'created_at'
     actions = ['export_stock_in_excel']
@@ -174,7 +174,7 @@ class StockInAdmin(admin.ModelAdmin):
             
             # هدرها
             headers = [
-                "انبار", "نام کالا", "هویت کالا", "مقدار", "قیمت واحد", 
+                "انبار", "نام کالا", "هویت کالا", "مشتری", "مقدار", "قیمت واحد", 
                 "قیمت کل", "شماره بارنامه", "تاریخ ورود دستی", "یادداشت‌ها"
             ]
             
@@ -215,9 +215,9 @@ class StockInAdmin(admin.ModelAdmin):
 
 @admin.register(StockOut)
 class StockOutAdmin(admin.ModelAdmin):
-    list_display = ['warehouse', 'material_type', 'customer', 'quantity', 'unit_price', 'total_price', 'persian_manual_date', 'persian_created_at']
-    list_filter = ['warehouse', 'material_type', 'customer', 'created_at', 'manual_date']
-    search_fields = ['warehouse__name', 'material_type__name', 'customer__name', 'invoice_number']
+    list_display = ['warehouse', 'material_type', 'customer', 'supplier', 'quantity', 'unit_price', 'total_price', 'persian_manual_date', 'persian_created_at']
+    list_filter = ['warehouse', 'material_type', 'customer', 'supplier', 'created_at', 'manual_date']
+    search_fields = ['warehouse__name', 'material_type__name', 'customer__name', 'supplier__name', 'invoice_number']
     readonly_fields = ['total_price', 'created_at']
     date_hierarchy = 'created_at'
     actions = ['export_stock_out_excel']
@@ -304,7 +304,7 @@ class StockOutAdmin(admin.ModelAdmin):
             
             # هدرها
             headers = [
-                "انبار", "نام کالا", "نام مشتری", "مقدار", "قیمت واحد", 
+                "انبار", "نام کالا", "نام مشتری", "هویت کالای خروجی", "مقدار", "قیمت واحد", 
                 "قیمت کل", "شماره بارنامه", "تاریخ خروج دستی", "یادداشت‌ها"
             ]
             

@@ -68,12 +68,14 @@ class Inventory(models.Model):
     """موجودی انبار"""
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, blank=True, null=True, verbose_name="انبار")
     material_type = models.ForeignKey(MaterialType, on_delete=models.CASCADE, verbose_name="نوع ماده")
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, blank=True, null=True, verbose_name="هویت کالا (Supplier)")
     current_quantity = models.IntegerField(default=0, blank=True, null=True, verbose_name="موجودی فعلی")
     last_updated = models.DateTimeField(auto_now=True, verbose_name="آخرین بروزرسانی")
     
     def __str__(self):
         warehouse_name = self.warehouse.name if self.warehouse else "بدون انبار"
-        return f"{warehouse_name} - {self.material_type.name}: {self.current_quantity} {self.material_type.unit}"
+        supplier_name = f" - {self.supplier.name}" if self.supplier else ""
+        return f"{warehouse_name} - {self.material_type.name}{supplier_name}: {self.current_quantity} {self.material_type.unit}"
     
     class Meta:
         verbose_name = "موجودی انبار"
@@ -85,6 +87,7 @@ class StockIn(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, blank=True, null=True, verbose_name="انبار")
     material_type = models.ForeignKey(MaterialType, on_delete=models.CASCADE, verbose_name="نام کالا")
     supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, verbose_name="هویت کالا")
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, blank=True, null=True, verbose_name="مشتری (پیش‌فرض خودتان)")
     quantity = models.IntegerField(blank=True, null=True, verbose_name="مقدار")
     unit_price = models.IntegerField(blank=True, null=True, verbose_name="قیمت واحد")
     total_price = models.IntegerField(blank=True, null=True, verbose_name="قیمت کل")
@@ -100,11 +103,12 @@ class StockIn(models.Model):
             self.total_price = self.quantity * self.unit_price
         super().save(*args, **kwargs)
         
-        # بروزرسانی موجودی انبار
+        # بروزرسانی موجودی انبار - موجودی هر Supplier جداگانه
         if self.warehouse:
             inventory, created = Inventory.objects.get_or_create(
                 warehouse=self.warehouse,
                 material_type=self.material_type,
+                supplier=self.supplier,
                 defaults={'current_quantity': 0}
             )
             inventory.current_quantity += self.quantity or 0
@@ -112,7 +116,9 @@ class StockIn(models.Model):
     
     def __str__(self):
         warehouse_name = self.warehouse.name if self.warehouse else "بدون انبار"
-        return f"ورودی {warehouse_name} - {self.material_type.name} - {self.quantity} {self.material_type.unit}"
+        supplier_name = self.supplier.name if self.supplier else "بدون هویت"
+        customer_name = f" - {self.customer.name}" if self.customer else ""
+        return f"ورودی {warehouse_name} - {supplier_name} - {self.material_type.name} - {self.quantity} {self.material_type.unit}{customer_name}"
     
     class Meta:
         verbose_name = "ورودی انبار"
@@ -123,6 +129,7 @@ class StockOut(models.Model):
     warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE, blank=True, null=True, verbose_name="انبار")
     material_type = models.ForeignKey(MaterialType, on_delete=models.CASCADE, verbose_name="نام کالا")
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE, verbose_name="مشتری")
+    supplier = models.ForeignKey(Supplier, on_delete=models.CASCADE, blank=True, null=True, verbose_name="هویت کالای خروجی (از کدام Supplier)")
     quantity = models.IntegerField(blank=True, null=True, verbose_name="مقدار")
     unit_price = models.IntegerField(blank=True, null=True, verbose_name="قیمت واحد")
     total_price = models.IntegerField(blank=True, null=True, verbose_name="قیمت کل")
@@ -138,18 +145,33 @@ class StockOut(models.Model):
             self.total_price = self.quantity * self.unit_price
         super().save(*args, **kwargs)
         
-        # بروزرسانی موجودی انبار
+        # بروزرسانی موجودی انبار - موجودی هر Supplier جداگانه
         if self.warehouse:
             try:
-                inventory = Inventory.objects.get(warehouse=self.warehouse, material_type=self.material_type)
-                inventory.current_quantity -= self.quantity or 0
-                inventory.save()
+                # اگر Supplier مشخص شده، از موجودی آن کم کن
+                if self.supplier:
+                    inventory = Inventory.objects.get(
+                        warehouse=self.warehouse, 
+                        material_type=self.material_type,
+                        supplier=self.supplier
+                    )
+                    inventory.current_quantity -= self.quantity or 0
+                    inventory.save()
+                else:
+                    # اگر Supplier مشخص نشده، از موجودی کلی کم کن
+                    inventory = Inventory.objects.get(
+                        warehouse=self.warehouse, 
+                        material_type=self.material_type
+                    )
+                    inventory.current_quantity -= self.quantity or 0
+                    inventory.save()
             except Inventory.DoesNotExist:
                 pass  # اگر موجودی وجود نداشت، کاری نکن
     
     def __str__(self):
         warehouse_name = self.warehouse.name if self.warehouse else "بدون انبار"
-        return f"خروجی {warehouse_name} - {self.material_type.name} - {self.quantity} {self.material_type.unit}"
+        supplier_name = f" - {self.supplier.name}" if self.supplier else ""
+        return f"خروجی {warehouse_name} - {self.material_type.name} - {self.quantity} {self.material_type.unit}{supplier_name}"
     
     class Meta:
         verbose_name = "خروجی انبار"
