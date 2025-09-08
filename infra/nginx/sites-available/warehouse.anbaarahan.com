@@ -46,7 +46,7 @@ server {
     
     # Django Application
     location / {
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:8008;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -61,7 +61,7 @@ server {
     
     # Admin Interface (optional: separate location for admin)
     location /admin/ {
-        proxy_pass http://127.0.0.1:8000/admin/;
+        proxy_pass http://127.0.0.1:8008/admin/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
