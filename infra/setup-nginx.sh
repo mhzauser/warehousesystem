@@ -33,8 +33,10 @@ print_step() {
 
 # Check if running as root
 if [[ $EUID -eq 0 ]]; then
-   print_error "This script should not be run as root"
-   exit 1
+   print_warning "Running as root - this is required for nginx setup"
+   print_warning "Make sure you understand the commands being executed"
+   echo ""
+   read -p "Press Enter to continue, or Ctrl+C to exit..."
 fi
 
 # Get the project directory
@@ -68,13 +70,21 @@ fi
 
 # Step 3: Create nginx configuration
 print_step "Creating nginx configuration..."
-sudo cp "$PROJECT_DIR/infra/nginx-only.conf" /etc/nginx/sites-available/warehouse.anbaarahan.com
+if [[ $EUID -eq 0 ]]; then
+    cp "$PROJECT_DIR/infra/nginx-only.conf" /etc/nginx/sites-available/warehouse.anbaarahan.com
+else
+    sudo cp "$PROJECT_DIR/infra/nginx-only.conf" /etc/nginx/sites-available/warehouse.anbaarahan.com
+fi
 print_status "Nginx configuration copied to sites-available ✓"
 
 # Step 4: Enable the site
 print_step "Enabling nginx site..."
 if [ ! -L "/etc/nginx/sites-enabled/warehouse.anbaarahan.com" ]; then
-    sudo ln -s /etc/nginx/sites-available/warehouse.anbaarahan.com /etc/nginx/sites-enabled/
+    if [[ $EUID -eq 0 ]]; then
+        ln -s /etc/nginx/sites-available/warehouse.anbaarahan.com /etc/nginx/sites-enabled/
+    else
+        sudo ln -s /etc/nginx/sites-available/warehouse.anbaarahan.com /etc/nginx/sites-enabled/
+    fi
     print_status "Nginx site enabled ✓"
 else
     print_status "Nginx site already enabled ✓"
@@ -83,7 +93,11 @@ fi
 # Step 5: Remove default nginx site (optional)
 print_step "Removing default nginx site..."
 if [ -L "/etc/nginx/sites-enabled/default" ]; then
-    sudo rm /etc/nginx/sites-enabled/default
+    if [[ $EUID -eq 0 ]]; then
+        rm /etc/nginx/sites-enabled/default
+    else
+        sudo rm /etc/nginx/sites-enabled/default
+    fi
     print_status "Default nginx site removed ✓"
 else
     print_status "Default nginx site not found ✓"
@@ -91,25 +105,47 @@ fi
 
 # Step 6: Test nginx configuration
 print_step "Testing nginx configuration..."
-if sudo nginx -t; then
-    print_status "Nginx configuration is valid ✓"
+if [[ $EUID -eq 0 ]]; then
+    if nginx -t; then
+        print_status "Nginx configuration is valid ✓"
+    else
+        print_error "Nginx configuration test failed"
+        exit 1
+    fi
 else
-    print_error "Nginx configuration test failed"
-    exit 1
+    if sudo nginx -t; then
+        print_status "Nginx configuration is valid ✓"
+    else
+        print_error "Nginx configuration test failed"
+        exit 1
+    fi
 fi
 
 # Step 7: Reload nginx
 print_step "Reloading nginx..."
-sudo systemctl reload nginx
+if [[ $EUID -eq 0 ]]; then
+    systemctl reload nginx
+else
+    sudo systemctl reload nginx
+fi
 print_status "Nginx reloaded successfully ✓"
 
 # Step 8: Check nginx status
 print_step "Checking nginx status..."
-if sudo systemctl is-active --quiet nginx; then
-    print_status "Nginx is running ✓"
+if [[ $EUID -eq 0 ]]; then
+    if systemctl is-active --quiet nginx; then
+        print_status "Nginx is running ✓"
+    else
+        print_warning "Nginx is not running. Starting nginx..."
+        systemctl start nginx
+    fi
 else
-    print_warning "Nginx is not running. Starting nginx..."
-    sudo systemctl start nginx
+    if sudo systemctl is-active --quiet nginx; then
+        print_status "Nginx is running ✓"
+    else
+        print_warning "Nginx is not running. Starting nginx..."
+        sudo systemctl start nginx
+    fi
 fi
 
 # Step 9: SSL Certificate Information
