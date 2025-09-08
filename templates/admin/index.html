@@ -1,0 +1,234 @@
+{% extends "admin/index.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-card h3 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+        font-weight: 500;
+    }
+    
+    .stat-card .number {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stat-card .icon {
+        font-size: 24px;
+        opacity: 0.8;
+    }
+    
+    .stat-card.warehouse { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .stat-card.inventory { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .stat-card.supplier { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .stat-card.customer { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+    
+    .quick-actions {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        margin-bottom: 30px;
+    }
+    
+    .quick-actions h2 {
+        margin: 0 0 20px 0;
+        color: #333;
+        font-size: 20px;
+        font-weight: 600;
+    }
+    
+    .action-buttons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+    
+    .action-btn {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        text-decoration: none;
+        color: #495057;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+    
+    .action-btn:hover {
+        background: #007bff;
+        color: white;
+        border-color: #007bff;
+        transform: translateY(-2px);
+        text-decoration: none;
+    }
+    
+    .action-btn i {
+        margin-left: 10px;
+        font-size: 18px;
+    }
+    
+    .recent-activity {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+    
+    .recent-activity h2 {
+        margin: 0 0 20px 0;
+        color: #333;
+        font-size: 20px;
+        font-weight: 600;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid #f1f3f4;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 15px;
+        font-size: 16px;
+        color: white;
+    }
+    
+    .activity-icon.stockin { background: #28a745; }
+    .activity-icon.stockout { background: #dc3545; }
+    .activity-icon.transfer { background: #ffc107; }
+    
+    .activity-content h4 {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .activity-content p {
+        margin: 0;
+        font-size: 12px;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-stats">
+    <div class="stat-card warehouse">
+        <div class="icon"><i class="fas fa-warehouse"></i></div>
+        <h3>انبارها</h3>
+        <div class="number">{{ app_list|length }}</div>
+    </div>
+    
+    <div class="stat-card inventory">
+        <div class="icon"><i class="fas fa-boxes"></i></div>
+        <h3>موجودی کل</h3>
+        <div class="number">{{ app_list|length }}</div>
+    </div>
+    
+    <div class="stat-card supplier">
+        <div class="icon"><i class="fas fa-truck"></i></div>
+        <h3>تامین کنندگان</h3>
+        <div class="number">{{ app_list|length }}</div>
+    </div>
+    
+    <div class="stat-card customer">
+        <div class="icon"><i class="fas fa-users"></i></div>
+        <h3>مشتریان</h3>
+        <div class="number">{{ app_list|length }}</div>
+    </div>
+</div>
+
+<div class="quick-actions">
+    <h2><i class="fas fa-bolt"></i> اقدامات سریع</h2>
+    <div class="action-buttons">
+        <a href="{% url 'admin:inventory_stockin_add' %}" class="action-btn">
+            <i class="fas fa-plus"></i>
+            ورود کالا
+        </a>
+        <a href="{% url 'admin:inventory_stockout_add' %}" class="action-btn">
+            <i class="fas fa-minus"></i>
+            خروج کالا
+        </a>
+        <a href="{% url 'admin:inventory_stocktransfer_add' %}" class="action-btn">
+            <i class="fas fa-exchange-alt"></i>
+            انتقال کالا
+        </a>
+        <a href="{% url 'admin:inventory_inventory_changelist' %}" class="action-btn">
+            <i class="fas fa-list"></i>
+            مشاهده موجودی
+        </a>
+    </div>
+</div>
+
+<div class="recent-activity">
+    <h2><i class="fas fa-history"></i> فعالیت‌های اخیر</h2>
+    <div class="activity-item">
+        <div class="activity-icon stockin">
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="activity-content">
+            <h4>ورود کالای جدید</h4>
+            <p>میلگرد 8mm - 1000 کیلوگرم</p>
+        </div>
+    </div>
+    <div class="activity-item">
+        <div class="activity-icon stockout">
+            <i class="fas fa-minus"></i>
+        </div>
+        <div class="activity-content">
+            <h4>خروج کالا</h4>
+            <p>ورق فولادی - 500 کیلوگرم</p>
+        </div>
+    </div>
+    <div class="activity-item">
+        <div class="activity-icon transfer">
+            <i class="fas fa-exchange-alt"></i>
+        </div>
+        <div class="activity-content">
+            <h4>انتقال کالا</h4>
+            <p>لوله فولادی - انبار A به انبار B</p>
+        </div>
+    </div>
+</div>
+
+{{ block.super }}
+{% endblock %}
+

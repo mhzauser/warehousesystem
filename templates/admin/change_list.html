@@ -1,0 +1,191 @@
+{% extends "admin/change_list.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    /* Custom styling for change list */
+    .results {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .results thead th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px;
+        font-weight: 600;
+        border: none;
+        text-align: right;
+    }
+    
+    .results tbody tr {
+        transition: background-color 0.3s ease;
+    }
+    
+    .results tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .results tbody td {
+        padding: 15px;
+        border-bottom: 1px solid #f1f3f4;
+        text-align: right;
+    }
+    
+    /* Action buttons */
+    .object-tools {
+        margin-bottom: 20px;
+    }
+    
+    .object-tools a {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        display: inline-block;
+        margin-left: 10px;
+    }
+    
+    .object-tools a:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        text-decoration: none;
+    }
+    
+    /* Search and filters */
+    .search-form {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .search-form input[type="text"] {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px 15px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        width: 300px;
+    }
+    
+    .search-form input[type="text"]:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        outline: none;
+    }
+    
+    .search-form input[type="submit"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-right: 10px;
+    }
+    
+    .search-form input[type="submit"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Pagination */
+    .paginator {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-top: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        text-align: center;
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .paginator a, .paginator .this-page {
+        display: inline-block;
+        padding: 10px 15px;
+        margin: 0 5px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .paginator a {
+        background: #f8f9fa;
+        color: #495057;
+        border: 2px solid #e9ecef;
+    }
+    
+    .paginator a:hover {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+        transform: translateY(-2px);
+    }
+    
+    .paginator .this-page {
+        background: #667eea;
+        color: white;
+        border: 2px solid #667eea;
+    }
+    
+    /* Breadcrumbs */
+    .breadcrumbs {
+        background: white;
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        border: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .breadcrumbs a {
+        color: #667eea;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .breadcrumbs a:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .search-form input[type="text"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .object-tools a {
+            display: block;
+            margin: 5px 0;
+            text-align: center;
+        }
+        
+        .results {
+            font-size: 12px;
+        }
+        
+        .results thead th,
+        .results tbody td {
+            padding: 10px 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
+{% endblock %}
+

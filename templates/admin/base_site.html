@@ -1,0 +1,32 @@
+{% extends "admin/base.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <i class="fas fa-warehouse"></i>
+    <a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}
+
+{% block footer %}
+<div id="footer">
+    <div class="footer-content">
+        <p>&copy; 2024 سیستم انبارداری آهن. تمامی حقوق محفوظ است.</p>
+        <div class="footer-links">
+            <a href="#" class="footer-link"><i class="fas fa-question-circle"></i> راهنما</a>
+            <a href="#" class="footer-link"><i class="fas fa-envelope"></i> پشتیبانی</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
