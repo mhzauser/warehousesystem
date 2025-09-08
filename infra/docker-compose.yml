@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: gunicorn ironwarehouse.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    volumes:
+      - .:/app
+      - static_volume:/app/static
+      - media_volume:/app/media
+    expose:
+      - 8000
+    environment:
+      - DEBUG=False
+      - ALLOWED_HOSTS=warehouse.anbaarahan.com,localhost,127.0.0.1
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=warehouse_db
+      - POSTGRES_USER=warehouse_user
+      - POSTGRES_PASSWORD=warehouse_password
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/sites-available:/etc/nginx/sites-available
+      - ./nginx/sites-enabled:/etc/nginx/sites-enabled
+      - static_volume:/var/www/warehousesystem/static
+      - media_volume:/var/www/warehousesystem/media
+      - ./ssl:/etc/ssl/certs
+    depends_on:
+      - web
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
