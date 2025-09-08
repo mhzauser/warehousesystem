@@ -55,17 +55,17 @@ print_status "Nginx is installed ✓"
 
 # Step 2: Check if Django is running
 print_step "Checking Django application..."
-if ! curl -s http://localhost:8000 > /dev/null 2>&1; then
-    print_warning "Django application is not running on localhost:8000"
+if ! curl -s http://localhost:8008 > /dev/null 2>&1; then
+    print_warning "Django application is not running on localhost:8008"
     print_warning "Please make sure your Django application is running before continuing"
     echo ""
     echo "To start Django with Gunicorn:"
     echo "  cd $PROJECT_DIR"
-    echo "  gunicorn ironwarehouse.wsgi:application --bind 127.0.0.1:8000 --workers 3"
+    echo "  gunicorn ironwarehouse.wsgi:application --bind 127.0.0.1:8008 --workers 3"
     echo ""
     read -p "Press Enter to continue anyway, or Ctrl+C to exit..."
 else
-    print_status "Django application is running on localhost:8000 ✓"
+    print_status "Django application is running on localhost:8008 ✓"
 fi
 
 # Step 3: Create nginx configuration
@@ -167,7 +167,7 @@ echo ""
 echo "📋 Next steps:"
 echo "1. Configure your DNS to point warehouse.anbaarahan.com to this server"
 echo "2. Install SSL certificates (see instructions above)"
-echo "3. Make sure your Django application is running on localhost:8000"
+echo "3. Make sure your Django application is running on localhost:8008"
 echo "4. Configure your firewall to allow HTTP (80) and HTTPS (443) traffic"
 echo ""
 echo "🔍 Useful commands:"
